@@ -1,0 +1,52 @@
+name: Test multiple LCOV coverage files
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install lcov
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq lcov
+
+      - name: Create source files and multiple LCOV coverage files
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/src"
+          printf 'function helper() { return 1; }\n' > "$GITHUB_WORKSPACE/src/utils.js"
+          printf 'function run() { return 1; }\n' > "$GITHUB_WORKSPACE/src/app.js"
+          mkdir -p "$GITHUB_WORKSPACE/coverage"
+          printf 'TN:\nSF:src/utils.js\nFN:1,helper\nFNDA:1,helper\nFNF:1\nFNH:1\nDA:1,1\nLF:1\nLH:1\nend_of_record\n' \
+            > "$GITHUB_WORKSPACE/coverage/lcov.unit.info"
+          printf 'TN:\nSF:src/app.js\nFN:1,run\nFNDA:1,run\nFNF:1\nFNH:1\nDA:1,1\nDA:2,0\nLF:2\nLH:1\nend_of_record\n' \
+            > "$GITHUB_WORKSPACE/coverage/lcov.integration.info"
+
+      - id: action
+        uses: .
+        with:
+          coverage-files: ${{ github.workspace }}/coverage/lcov.*.info
+          minimum-coverage: 0
+
+      - name: Assert total-coverage output is set
+        env:
+          TOTAL_COVERAGE: ${{ steps.action.outputs.total-coverage }}
+        run: |
+          echo "total-coverage: $TOTAL_COVERAGE"
+          if [ -z "$TOTAL_COVERAGE" ]; then
+            echo "FAIL: expected total-coverage to be non-empty"
+            exit 1
+          fi
+          echo "PASS"
+
+      - name: Assert total-coverage is a number
+        env:
+          TOTAL_COVERAGE: ${{ steps.action.outputs.total-coverage }}
+        run: |
+          echo "total-coverage: $TOTAL_COVERAGE"
+          if ! echo "$TOTAL_COVERAGE" | grep -qE '^[0-9]+(\.[0-9]+)?$'; then
+            echo "FAIL: expected total-coverage to be a numeric value, got: $TOTAL_COVERAGE"
+            exit 1
+          fi
+          echo "PASS"
