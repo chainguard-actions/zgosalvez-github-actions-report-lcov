@@ -1,0 +1,40 @@
+name: Test basic LCOV coverage report
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install lcov
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y lcov
+          lcov --version
+          genhtml --version
+
+      - name: Create LCOV coverage file
+        run: |
+          mkdir -p coverage
+          printf 'TN:\nSF:src/index.js\nFN:1,main\nFNDA:1,main\nFNF:1\nFNH:1\nBRDA:1,0,0,1\nBRDA:1,0,1,0\nBRF:2\nBRH:1\nDA:1,1\nDA:2,1\nDA:3,1\nLF:3\nLH:3\nend_of_record\n' > coverage/lcov.info
+
+      - id: action
+        uses: .
+        with:
+          coverage-files: coverage/lcov.info
+          minimum-coverage: 0
+          genhtml-ignore-errors: source
+
+      - name: Assert total-coverage output is set
+        env:
+          ACTUAL: ${{ steps.action.outputs.total-coverage }}
+        run: |
+          echo "actual total-coverage: $ACTUAL"
+          if [ -z "$ACTUAL" ]; then
+            echo "FAIL: expected total-coverage output to be non-empty"
+            exit 1
+          fi
+          echo "PASS: total-coverage=$ACTUAL"

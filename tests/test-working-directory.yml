@@ -1,0 +1,41 @@
+name: Test working-directory input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install lcov
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y lcov
+
+      - name: Create source and coverage files
+        run: |
+          mkdir -p myproject/src
+          echo "function hello() { return 'hello'; }" > myproject/src/hello.js
+          mkdir -p myproject/coverage
+          printf 'TN:\nSF:src/hello.js\nFN:1,hello\nFNDA:1,hello\nFNF:1\nFNH:1\nBRDA:1,0,0,1\nBRF:1\nBRH:1\nDA:1,1\nLF:1\nLH:1\nend_of_record\n' > myproject/coverage/lcov.info
+
+      - id: action
+        uses: .
+        with:
+          coverage-files: myproject/coverage/lcov.info
+          working-directory: myproject
+          minimum-coverage: 0
+          genhtml-ignore-errors: source
+
+      - name: Assert total-coverage output is set
+        env:
+          ACTUAL: ${{ steps.action.outputs.total-coverage }}
+        run: |
+          echo "actual total-coverage: $ACTUAL"
+          if [ -z "$ACTUAL" ]; then
+            echo "FAIL: expected total-coverage output to be non-empty"
+            exit 1
+          fi
+          echo "PASS: total-coverage=$ACTUAL"
