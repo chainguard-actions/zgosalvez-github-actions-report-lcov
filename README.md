@@ -1,1 +1,15 @@
-# zgosalvez-github-actions-report-lcov
+# zgosalvez/github-actions-report-lcov
+
+Report the code coverage from LCOV files
+
+Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at [https://github.com/zgosalvez/github-actions-report-lcov](https://github.com/zgosalvez/github-actions-report-lcov).
+
+## Versions
+
+| Version | Tag | Upstream commit |
+|---------|-----|-----------------|
+| v7.1.0-beta.1 | [`v7.1.0-beta.1`](https://github.com/chainguard-actions/zgosalvez-github-actions-report-lcov/tree/v7.1.0-beta.1) | [`b995ecc`](https://github.com/zgosalvez/github-actions-report-lcov/commit/b995eccb3324a433aa9002b269f7353044e4386c) |
+
+## Privacy
+
+This Action contacts Chainguard's licensing server to verify authorization. Connection metadata (IP address, GitHub repository identifier, timestamp, and any metadata encoded in the auth token) is transmitted to Chainguard, Inc. even if authorization is denied in accordance with our [Privacy Notice](https://www.chainguard.dev/legal/privacy-notice)
