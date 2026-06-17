@@ -1,0 +1,48 @@
+name: Test artifact-name input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install lcov tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y lcov
+
+      - name: Detect lcov version and set ignore-errors flag
+        run: |
+          LCOV_VERSION=$(lcov --version 2>&1 | grep -oE '[0-9]+\.[0-9]+' | head -1)
+          MAJOR=$(echo "$LCOV_VERSION" | cut -d. -f1)
+          echo "lcov version: $LCOV_VERSION (major: $MAJOR)"
+          if [ "${MAJOR:-1}" -ge 2 ]; then
+            echo "GENHTML_IGNORE_ERRORS=inconsistent" >> "$GITHUB_ENV"
+          else
+            echo "GENHTML_IGNORE_ERRORS=" >> "$GITHUB_ENV"
+          fi
+
+      - name: Create LCOV coverage file
+        run: |
+          mkdir -p /tmp/coverage
+          printf 'TN:\nSF:src/main.js\nFN:1,main\nFNDA:1,main\nFNF:1\nFNH:1\nDA:1,1\nDA:2,1\nDA:3,1\nDA:4,1\nLF:4\nLH:4\nBRF:0\nBRH:0\nend_of_record\n' > /tmp/coverage/lcov.info
+
+      - id: action
+        uses: .
+        with:
+          coverage-files: /tmp/coverage/lcov.info
+          artifact-name: code-coverage-report
+          minimum-coverage: 0
+          genhtml-ignore-errors: ${{ env.GENHTML_IGNORE_ERRORS }}
+
+      - name: Assert total-coverage output is set
+        env:
+          ACTUAL: ${{ steps.action.outputs.total-coverage }}
+        run: |
+          echo "actual total-coverage: $ACTUAL"
+          if [ -z "$ACTUAL" ]; then
+            echo "FAIL: expected total-coverage output to be non-empty"
+            exit 1
+          fi
+          echo "PASS: total-coverage=$ACTUAL"

@@ -1,0 +1,48 @@
+name: Test minimum coverage threshold failure
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install lcov tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y lcov
+
+      - name: Detect lcov version and set ignore-errors flag
+        run: |
+          LCOV_VERSION=$(lcov --version 2>&1 | grep -oE '[0-9]+\.[0-9]+' | head -1)
+          MAJOR=$(echo "$LCOV_VERSION" | cut -d. -f1)
+          echo "lcov version: $LCOV_VERSION (major: $MAJOR)"
+          if [ "${MAJOR:-1}" -ge 2 ]; then
+            echo "GENHTML_IGNORE_ERRORS=inconsistent" >> "$GITHUB_ENV"
+          else
+            echo "GENHTML_IGNORE_ERRORS=" >> "$GITHUB_ENV"
+          fi
+
+      - name: Create LCOV coverage file with low coverage
+        run: |
+          mkdir -p /tmp/coverage
+          printf 'TN:\nSF:src/main.js\nFN:1,main\nFNDA:0,main\nFNF:1\nFNH:0\nDA:1,0\nDA:2,0\nDA:3,0\nDA:4,0\nLF:4\nLH:0\nBRF:0\nBRH:0\nend_of_record\n' > /tmp/coverage/lcov.info
+
+      - id: action
+        uses: .
+        with:
+          coverage-files: /tmp/coverage/lcov.info
+          minimum-coverage: 90
+          genhtml-ignore-errors: ${{ env.GENHTML_IGNORE_ERRORS }}
+        continue-on-error: true
+
+      - name: Assert action failed due to low coverage
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "action outcome: $OUTCOME"
+          if [ "$OUTCOME" != "failure" ]; then
+            echo "FAIL: expected action to fail when coverage is below minimum"
+            exit 1
+          fi
+          echo "PASS: action correctly failed when coverage below minimum threshold"
