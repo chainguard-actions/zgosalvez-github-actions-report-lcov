@@ -12,6 +12,7 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 | v7.0.11 | [`v7.0.11`](https://github.com/chainguard-actions/zgosalvez-github-actions-report-lcov/tree/v7.0.11) | [`54f6f67`](https://github.com/zgosalvez/github-actions-report-lcov/commit/54f6f672783e0322d7b563dcb051fbc610c6c636) |
 | v7.0.12 | [`v7.0.12`](https://github.com/chainguard-actions/zgosalvez-github-actions-report-lcov/tree/v7.0.12) | [`84f16a8`](https://github.com/zgosalvez/github-actions-report-lcov/commit/84f16a83ae03e846a4c697bd75cae3f94fa9f426) |
 | v7.0.9 | [`v7.0.9`](https://github.com/chainguard-actions/zgosalvez-github-actions-report-lcov/tree/v7.0.9) | [`5aba2ff`](https://github.com/zgosalvez/github-actions-report-lcov/commit/5aba2ff56b3dd258ec9916d3b5049dc5994db23e) |
+| v7.1.0 | [`v7.1.0`](https://github.com/chainguard-actions/zgosalvez-github-actions-report-lcov/tree/v7.1.0) | [`0e97540`](https://github.com/zgosalvez/github-actions-report-lcov/commit/0e97540271bfaece1ddff20e7fa8d9a6ab1abf67) |
 | v7.1.0-beta.1 | [`v7.1.0-beta.1`](https://github.com/chainguard-actions/zgosalvez-github-actions-report-lcov/tree/v7.1.0-beta.1) | [`b995ecc`](https://github.com/zgosalvez/github-actions-report-lcov/commit/b995eccb3324a433aa9002b269f7353044e4386c) |
 
 ## Privacy
