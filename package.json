@@ -1,0 +1,39 @@
+{
+  "name": "github-actions-report-lcov",
+  "version": "1.0.0",
+  "description": "Report the code coverage from LCOV files",
+  "main": "dist/main/index.js",
+  "scripts": {
+    "lint": "eslint .",
+    "prepare": "rm -rf dist && rollup -c",
+    "test": "node --test",
+    "verify-dist": "node scripts/verify-dist-bundles.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zgosalvez/github-actions-report-lcov.git"
+  },
+  "keywords": [
+    "actions",
+    "node"
+  ],
+  "author": "Zennon Gosalvez",
+  "license": "MIT",
+  "dependencies": {
+    "@actions/artifact": "^6.2.1",
+    "@actions/core": "^3.0.1",
+    "@actions/exec": "^3.0.0",
+    "@actions/github": "^9.1.1",
+    "@actions/glob": "^0.7.0",
+    "@actions/io": "^3.0.2",
+    "install": "^0.13.0",
+    "lcov-total": "^1.0.7"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^29.0.3",
+    "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "eslint": "^10.6.0",
+    "rollup": "^4.62.2"
+  }
+}

@@ -1,0 +1,44 @@
+name: Test minimum coverage threshold pass
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install lcov
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y lcov
+
+      - name: Create source files and LCOV coverage file with 100% coverage
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/myproject/src"
+          echo "function main() { return 1; }" > "$GITHUB_WORKSPACE/myproject/src/main.js"
+          mkdir -p "$GITHUB_WORKSPACE/coverage"
+          printf 'TN:\nSF:src/main.js\nFN:1,main\nFNDA:1,main\nFNF:1\nFNH:1\nDA:1,1\nDA:2,1\nDA:3,1\nDA:4,1\nLF:4\nLH:4\nend_of_record\n' > "$GITHUB_WORKSPACE/coverage/lcov.info"
+
+      - id: action
+        uses: .
+        with:
+          coverage-files: ${{ github.workspace }}/coverage/lcov.info
+          minimum-coverage: 50
+          working-directory: ${{ github.workspace }}/myproject
+          genhtml-ignore-errors: source
+
+      - name: Assert total-coverage output is set and meets minimum
+        env:
+          ACTUAL: ${{ steps.action.outputs.total-coverage }}
+        run: |
+          echo "actual total-coverage: $ACTUAL"
+          if [ -z "$ACTUAL" ]; then
+            echo "FAIL: expected total-coverage output to be non-empty"
+            exit 1
+          fi
+          # Coverage should be 100 (all lines hit)
+          if [ "$ACTUAL" != "100" ]; then
+            echo "FAIL: expected total-coverage to be 100, got $ACTUAL"
+            exit 1
+          fi
+          echo "PASS: total-coverage=$ACTUAL meets minimum of 50"

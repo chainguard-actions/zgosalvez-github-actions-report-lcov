@@ -1,0 +1,41 @@
+name: Test LCOV reporting with multiple coverage files
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install lcov
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y lcov
+
+      - name: Create source files and multiple LCOV coverage files
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/myproject/src"
+          echo "function add(a, b) { return a + b; }" > "$GITHUB_WORKSPACE/myproject/src/utils.js"
+          echo "function fetchData() { return {}; }" > "$GITHUB_WORKSPACE/myproject/src/api.js"
+          mkdir -p "$GITHUB_WORKSPACE/coverage"
+          printf 'TN:\nSF:src/utils.js\nFN:1,add\nFNDA:1,add\nFNF:1\nFNH:1\nDA:1,1\nDA:2,1\nLF:2\nLH:2\nend_of_record\n' > "$GITHUB_WORKSPACE/coverage/lcov.unit.info"
+          printf 'TN:\nSF:src/api.js\nFN:1,fetchData\nFNDA:1,fetchData\nFNF:1\nFNH:1\nDA:1,1\nDA:2,1\nDA:3,0\nLF:3\nLH:2\nend_of_record\n' > "$GITHUB_WORKSPACE/coverage/lcov.integration.info"
+
+      - id: action
+        uses: .
+        with:
+          coverage-files: ${{ github.workspace }}/coverage/lcov.*.info
+          minimum-coverage: 0
+          working-directory: ${{ github.workspace }}/myproject
+          genhtml-ignore-errors: source
+
+      - name: Assert total-coverage output is set
+        env:
+          ACTUAL: ${{ steps.action.outputs.total-coverage }}
+        run: |
+          echo "actual total-coverage: $ACTUAL"
+          if [ -z "$ACTUAL" ]; then
+            echo "FAIL: expected total-coverage output to be non-empty"
+            exit 1
+          fi
+          echo "PASS: total-coverage=$ACTUAL"
