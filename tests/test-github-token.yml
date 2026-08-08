@@ -1,0 +1,43 @@
+name: Test github-token input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install lcov
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y lcov
+          lcov --version
+
+      - id: action
+        uses: .
+        with:
+          coverage-files: ${{ github.workspace }}/tests/fixtures/lcov-full.info
+          working-directory: ${{ github.workspace }}/tests/fixtures
+          github-token: ${{ github.token }}
+
+      - name: Assert total-coverage output is set
+        env:
+          TOTAL: ${{ steps.action.outputs.total-coverage }}
+        run: |
+          echo "total-coverage: $TOTAL"
+          if [ -z "$TOTAL" ]; then
+            echo "FAIL: total-coverage output is empty"
+            exit 1
+          fi
+          echo "PASS: total-coverage is '$TOTAL'"
+
+      - name: Assert total-coverage is a number
+        env:
+          TOTAL: ${{ steps.action.outputs.total-coverage }}
+        run: |
+          echo "total-coverage: $TOTAL"
+          if ! echo "$TOTAL" | grep -qE '^[0-9]+(\.[0-9]+)?$'; then
+            echo "FAIL: total-coverage '$TOTAL' is not a valid number"
+            exit 1
+          fi
+          echo "PASS: total-coverage is a valid number"

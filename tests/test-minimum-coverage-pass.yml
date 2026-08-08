@@ -1,0 +1,38 @@
+name: Test minimum coverage threshold pass
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install lcov
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y lcov
+          lcov --version
+
+      - id: action
+        uses: .
+        with:
+          coverage-files: ${{ github.workspace }}/tests/fixtures/lcov-full.info
+          minimum-coverage: 90
+          working-directory: ${{ github.workspace }}/tests/fixtures
+
+      - name: Assert action succeeded and coverage meets threshold
+        env:
+          TOTAL: ${{ steps.action.outputs.total-coverage }}
+        run: |
+          echo "total-coverage: $TOTAL"
+          if [ -z "$TOTAL" ]; then
+            echo "FAIL: total-coverage output is empty"
+            exit 1
+          fi
+          # Coverage should be >= 90 (full coverage LCOV has 100%)
+          INT_TOTAL=$(echo "$TOTAL" | cut -d'.' -f1)
+          if [ "$INT_TOTAL" -lt 90 ]; then
+            echo "FAIL: expected coverage >= 90, got $TOTAL"
+            exit 1
+          fi
+          echo "PASS: coverage $TOTAL meets minimum threshold of 90"

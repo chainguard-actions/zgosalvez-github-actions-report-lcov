@@ -1,0 +1,60 @@
+name: CI
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  security_hardening:
+    name: Check security hardening
+    runs-on: ubuntu-latest
+    steps:
+    - name: Clone the repository
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+    - name: Ensure SHA pinned actions
+      uses: zgosalvez/github-actions-ensure-sha-pinned-actions@3db98c0363e2fa5df3e1c4c471777a7c10b24cc9
+
+  build_test:
+    name: Build & Test
+    needs: security_hardening
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - name: Clone the repository
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        ref: ${{ github.head_ref }} # https://github.com/stefanzweifel/git-auto-commit-action#checkout-the-correct-branch
+        repository: ${{ github.event.pull_request.head.repo.full_name }}
+    - name: Get runs.using version
+      id: get-runs-using-version
+      uses: zgosalvez/github-actions-get-action-runs-using-version@2e2546a69d7c7f1e01b6f522aa5c3d1f549112ea
+    - name: Set up Node
+      uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+      with:
+        node-version: v${{ steps.get-runs-using-version.outputs.version }}
+    - name: Cache Node Packages
+      id: node-cache
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+      with:
+        path: ~/.npm
+        key: node-cache-${{ steps.get-runs-using-version.outputs.prop }}-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          node-cache-${{ steps.get-runs-using-version.outputs.prop }}-
+          node-cache-
+    - name: Get Node packages
+      run: npm ci
+    - name: Run linter tool
+      run: npm run lint
+    - name: Prepare
+      run: npm run prepare
+    - name: Verify bundled action dependencies
+      run: npm run verify-dist
+    - uses: stefanzweifel/git-auto-commit-action@4a55954c782fc1ea30b9056cd3e7a2b40ca8887d
+      if: github.event.pull_request.head.repo.full_name == github.repository
+      with:
+        commit_message: Apply `npm run prepare` changes

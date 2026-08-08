@@ -1,0 +1,15 @@
+TN:
+SF:src/example.js
+FN:1,example
+FNDA:1,example
+FN:5,uncovered
+FNDA:0,uncovered
+FNF:2
+FNH:1
+DA:1,1
+DA:2,1
+DA:3,0
+DA:4,0
+LF:4
+LH:2
+end_of_record
