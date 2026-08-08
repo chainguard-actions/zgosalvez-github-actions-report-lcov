@@ -1,0 +1,43 @@
+name: Test multiple coverage files
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install lcov
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y lcov
+
+      # Create a dedicated directory with two LCOV files for glob pattern testing
+      - name: Create additional coverage files
+        run: |
+          mkdir -p tests/fixtures/multi
+          cp tests/fixtures/lcov-full.info tests/fixtures/multi/lcov-a.info
+          cp tests/fixtures/lcov-full.info tests/fixtures/multi/lcov-b.info
+
+      # Use glob pattern to pick up both files in the dedicated directory
+      - id: action
+        uses: .
+        with:
+          coverage-files: tests/fixtures/multi/lcov-*.info
+          minimum-coverage: 0
+          working-directory: tests/fixtures
+
+      - name: Assert total-coverage output is set and valid
+        env:
+          TOTAL: ${{ steps.action.outputs.total-coverage }}
+        run: |
+          echo "total-coverage: $TOTAL"
+          if [ -z "$TOTAL" ]; then
+            echo "FAIL: total-coverage output is empty"
+            exit 1
+          fi
+          if ! echo "$TOTAL" | grep -qE '^[0-9]+(\.[0-9]+)?$'; then
+            echo "FAIL: total-coverage '$TOTAL' is not a valid number"
+            exit 1
+          fi
+          echo "PASS: total-coverage is '$TOTAL'"
