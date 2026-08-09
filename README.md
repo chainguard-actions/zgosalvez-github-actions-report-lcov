@@ -8,6 +8,7 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 
 | Version | Tag | Upstream commit |
 |---------|-----|-----------------|
+| v7 | [`v7`](https://github.com/chainguard-actions/zgosalvez-github-actions-report-lcov/tree/v7) | [`00810fe`](https://github.com/zgosalvez/github-actions-report-lcov/commit/00810fe31a127d403ad812ab09e1250e97638b8c) |
 | v7.0.10 | [`v7.0.10`](https://github.com/chainguard-actions/zgosalvez-github-actions-report-lcov/tree/v7.0.10) | [`7d72c57`](https://github.com/zgosalvez/github-actions-report-lcov/commit/7d72c57ce4bc101a4a0bf9d726b6c435abde8439) |
 | v7.0.11 | [`v7.0.11`](https://github.com/chainguard-actions/zgosalvez-github-actions-report-lcov/tree/v7.0.11) | [`54f6f67`](https://github.com/zgosalvez/github-actions-report-lcov/commit/54f6f672783e0322d7b563dcb051fbc610c6c636) |
 | v7.0.12 | [`v7.0.12`](https://github.com/chainguard-actions/zgosalvez-github-actions-report-lcov/tree/v7.0.12) | [`84f16a8`](https://github.com/zgosalvez/github-actions-report-lcov/commit/84f16a83ae03e846a4c697bd75cae3f94fa9f426) |
