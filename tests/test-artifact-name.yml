@@ -1,4 +1,4 @@
-name: Test LCOV reporting with github-token input
+name: Test LCOV reporting with artifact upload
 on:
   workflow_dispatch:
 jobs:
@@ -15,7 +15,7 @@ jobs:
       - name: Set up source files and coverage data
         run: |
           mkdir -p src coverage
-          printf 'function hello() { return 42; }\n' > src/hello.js
+          printf 'function example() {\n  var a = 1;\n  return a;\n}\n' > src/example.js
           cp tests/fixtures/lcov-full.info coverage/lcov.info
 
       - id: action
@@ -24,7 +24,7 @@ jobs:
           coverage-files: coverage/lcov.info
           working-directory: ${{ github.workspace }}
           genhtml-ignore-errors: source
-          github-token: ${{ github.token }}
+          artifact-name: code-coverage-report
 
       - name: Assert total-coverage output is set
         env:
@@ -37,13 +37,13 @@ jobs:
           fi
           echo "PASS: total-coverage=$ACTUAL"
 
-      - name: Assert total-coverage is numeric
+      - name: Assert artifact-id output is set
         env:
-          ACTUAL: ${{ steps.action.outputs.total-coverage }}
+          ACTUAL: ${{ steps.action.outputs.artifact-id }}
         run: |
-          echo "actual: $ACTUAL"
-          if ! echo "$ACTUAL" | grep -qE '^[0-9]+(\.[0-9]+)?$'; then
-            echo "FAIL: total-coverage is not a numeric value: $ACTUAL"
+          echo "actual artifact-id: $ACTUAL"
+          if [ -z "$ACTUAL" ]; then
+            echo "FAIL: artifact-id output is empty when artifact-name was provided"
             exit 1
           fi
-          echo "PASS: total-coverage is numeric"
+          echo "PASS: artifact-id=$ACTUAL"

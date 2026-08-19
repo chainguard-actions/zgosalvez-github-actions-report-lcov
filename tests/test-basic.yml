@@ -7,32 +7,46 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Install dependencies
+      - name: Install lcov tools
+        env:
+          DEBIAN_FRONTEND: noninteractive
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq lcov
+          sudo apt-get update -y
+          sudo apt-get install -y lcov
+          lcov --version
+          genhtml --version
 
-      - name: Create source files and LCOV coverage file
+      - name: Set up source files and coverage data
         run: |
-          mkdir -p "$GITHUB_WORKSPACE/src"
-          printf 'function main() {\n  return 1;\n}\n' > "$GITHUB_WORKSPACE/src/index.js"
-          mkdir -p "$GITHUB_WORKSPACE/coverage"
-          printf 'TN:\nSF:src/index.js\nFN:1,main\nFNDA:1,main\nFNF:1\nFNH:1\nDA:1,1\nDA:2,1\nDA:3,1\nLF:3\nLH:3\nend_of_record\n' \
-            > "$GITHUB_WORKSPACE/coverage/lcov.info"
+          mkdir -p src coverage
+          printf 'function example() {\n  var a = 1;\n  var b = 2;\n  return a + b;\n}\n' > src/example.js
+          cp tests/fixtures/lcov-full.info coverage/lcov.info
 
       - id: action
         uses: .
         with:
-          coverage-files: ${{ github.workspace }}/coverage/lcov.info
-          minimum-coverage: 0
+          coverage-files: coverage/lcov.info
+          working-directory: ${{ github.workspace }}
+          genhtml-ignore-errors: source
 
       - name: Assert total-coverage output is set
         env:
-          TOTAL_COVERAGE: ${{ steps.action.outputs.total-coverage }}
+          ACTUAL: ${{ steps.action.outputs.total-coverage }}
         run: |
-          echo "total-coverage: $TOTAL_COVERAGE"
-          if [ -z "$TOTAL_COVERAGE" ]; then
-            echo "FAIL: expected total-coverage to be non-empty"
+          echo "actual total-coverage: $ACTUAL"
+          if [ -z "$ACTUAL" ]; then
+            echo "FAIL: total-coverage output is empty"
             exit 1
           fi
-          echo "PASS"
+          echo "PASS: total-coverage=$ACTUAL"
+
+      - name: Assert total-coverage is a number
+        env:
+          ACTUAL: ${{ steps.action.outputs.total-coverage }}
+        run: |
+          echo "actual: $ACTUAL"
+          if ! echo "$ACTUAL" | grep -qE '^[0-9]+(\.[0-9]+)?$'; then
+            echo "FAIL: total-coverage is not a numeric value: $ACTUAL"
+            exit 1
+          fi
+          echo "PASS: total-coverage is numeric"

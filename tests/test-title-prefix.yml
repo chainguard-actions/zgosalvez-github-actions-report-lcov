@@ -1,4 +1,4 @@
-name: Test LCOV reporting with github-token input
+name: Test title-prefix input
 on:
   workflow_dispatch:
 jobs:
@@ -7,24 +7,30 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Install lcov
+      - name: Install lcov tools
+        env:
+          DEBIAN_FRONTEND: noninteractive
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq lcov
+          sudo apt-get update -y
+          sudo apt-get install -y lcov
+          lcov --version
+          genhtml --version
 
       - name: Set up source files and coverage data
         run: |
           mkdir -p src coverage
-          printf 'function hello() { return 42; }\n' > src/hello.js
+          printf 'function example() {\n  var a = 1;\n  var b = 2;\n  return a + b;\n}\n' > src/example.js
           cp tests/fixtures/lcov-full.info coverage/lcov.info
 
+      # title-prefix is used when commenting on PRs; here we just verify
+      # the action runs successfully with the input set
       - id: action
         uses: .
         with:
           coverage-files: coverage/lcov.info
+          title-prefix: "MyProject"
           working-directory: ${{ github.workspace }}
           genhtml-ignore-errors: source
-          github-token: ${{ github.token }}
 
       - name: Assert total-coverage output is set
         env:
@@ -35,15 +41,8 @@ jobs:
             echo "FAIL: total-coverage output is empty"
             exit 1
           fi
-          echo "PASS: total-coverage=$ACTUAL"
-
-      - name: Assert total-coverage is numeric
-        env:
-          ACTUAL: ${{ steps.action.outputs.total-coverage }}
-        run: |
-          echo "actual: $ACTUAL"
           if ! echo "$ACTUAL" | grep -qE '^[0-9]+(\.[0-9]+)?$'; then
-            echo "FAIL: total-coverage is not a numeric value: $ACTUAL"
+            echo "FAIL: total-coverage is not numeric: $ACTUAL"
             exit 1
           fi
-          echo "PASS: total-coverage is numeric"
+          echo "PASS: action ran successfully with title-prefix set, total-coverage=$ACTUAL"
