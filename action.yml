@@ -31,14 +31,15 @@ inputs:
     default: "false"
 outputs:
   total-coverage:
-    description: 'The total coverage from scanned files.'
+      description: 'The total coverage from scanned files.'
   artifact-id:
-    description: 'The GitHub artifact id for the generated HTML report.'
+      description: 'The GitHub artifact id for the generated HTML report.'
+
 runs:
+  pre: chainguard-phonehome.js
   using: 'node24'
   main: 'dist/main/index.js'
   post: 'dist/post/index.js'
-  pre: chainguard-phonehome.js
 branding:
   icon: umbrella
   color: purple

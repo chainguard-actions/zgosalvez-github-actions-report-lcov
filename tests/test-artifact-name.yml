@@ -1,4 +1,4 @@
-name: Test artifact-name input
+name: Test artifact-name input (HTML report upload)
 on:
   workflow_dispatch:
 jobs:
@@ -7,42 +7,46 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Install lcov tools
+      - name: Install lcov
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y lcov
-
-      - name: Detect lcov version and set ignore-errors flag
-        run: |
-          LCOV_VERSION=$(lcov --version 2>&1 | grep -oE '[0-9]+\.[0-9]+' | head -1)
-          MAJOR=$(echo "$LCOV_VERSION" | cut -d. -f1)
-          echo "lcov version: $LCOV_VERSION (major: $MAJOR)"
-          if [ "${MAJOR:-1}" -ge 2 ]; then
-            echo "GENHTML_IGNORE_ERRORS=inconsistent" >> "$GITHUB_ENV"
-          else
-            echo "GENHTML_IGNORE_ERRORS=" >> "$GITHUB_ENV"
-          fi
-
-      - name: Create LCOV coverage file
-        run: |
-          mkdir -p /tmp/coverage
-          printf 'TN:\nSF:src/main.js\nFN:1,main\nFNDA:1,main\nFNF:1\nFNH:1\nDA:1,1\nDA:2,1\nDA:3,1\nDA:4,1\nLF:4\nLH:4\nBRF:0\nBRH:0\nend_of_record\n' > /tmp/coverage/lcov.info
+          which genhtml
+          which lcov
+          lcov --version
 
       - id: action
         uses: .
         with:
-          coverage-files: /tmp/coverage/lcov.info
-          artifact-name: code-coverage-report
-          minimum-coverage: 0
-          genhtml-ignore-errors: ${{ env.GENHTML_IGNORE_ERRORS }}
+          coverage-files: ${{ github.workspace }}/hardened/tests/fixtures/lcov.info
+          working-directory: ${{ github.workspace }}/hardened/tests/fixtures
+          artifact-name: code-coverage-report-test
+          genhtml-ignore-errors: source
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
 
       - name: Assert total-coverage output is set
         env:
-          ACTUAL: ${{ steps.action.outputs.total-coverage }}
+          TOTAL: ${{ steps.action.outputs.total-coverage }}
         run: |
-          echo "actual total-coverage: $ACTUAL"
-          if [ -z "$ACTUAL" ]; then
-            echo "FAIL: expected total-coverage output to be non-empty"
+          echo "total-coverage: $TOTAL"
+          if [ -z "$TOTAL" ]; then
+            echo "FAIL: total-coverage output is empty"
             exit 1
           fi
-          echo "PASS: total-coverage=$ACTUAL"
+          if ! echo "$TOTAL" | grep -qE '^[0-9]+(\.[0-9]+)?$'; then
+            echo "FAIL: total-coverage is not a numeric value: $TOTAL"
+            exit 1
+          fi
+          echo "PASS: total-coverage=$TOTAL"
+
+      - name: Assert artifact-id output is set when artifact-name is provided
+        env:
+          ARTIFACT_ID: ${{ steps.action.outputs.artifact-id }}
+        run: |
+          echo "artifact-id: $ARTIFACT_ID"
+          if [ -z "$ARTIFACT_ID" ]; then
+            echo "FAIL: artifact-id output is empty — expected it to be set when artifact-name is provided"
+            exit 1
+          fi
+          echo "PASS: artifact-id=$ARTIFACT_ID"
