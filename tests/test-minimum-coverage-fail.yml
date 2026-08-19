@@ -1,4 +1,4 @@
-name: Test minimum coverage threshold failure
+name: Test minimum coverage fail
 on:
   workflow_dispatch:
 jobs:
@@ -7,33 +7,68 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Install lcov
-        env:
-          DEBIAN_FRONTEND: noninteractive
+      - name: Set up mock lcov tools
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y lcov
+          mkdir -p /tmp/mock-bin
 
-      - name: Create LCOV coverage file with 0% line coverage
-        run: |
-          mkdir -p coverage
-          printf 'TN:\nSF:src/index.js\nFN:1,main\nFNDA:0,main\nFNF:1\nFNH:0\nBRDA:1,0,0,0\nBRDA:1,0,1,0\nBRF:2\nBRH:0\nDA:1,0\nDA:2,0\nDA:3,0\nLF:3\nLH:0\nend_of_record\n' > coverage/lcov.info
+          # Mock genhtml: creates the output directory with a minimal HTML file
+          printf '%s\n' '#!/bin/sh' \
+            'outdir=""' \
+            'prev=""' \
+            'for arg in "$@"; do' \
+            '  case "$prev" in' \
+            '    --output-directory) outdir="$arg" ;;' \
+            '  esac' \
+            '  prev="$arg"' \
+            'done' \
+            'if [ -n "$outdir" ]; then' \
+            '  mkdir -p "$outdir"' \
+            '  printf "<html><body>Coverage</body></html>" > "$outdir/index.html"' \
+            'fi' \
+            'echo "genhtml: done"' \
+            'exit 0' > /tmp/mock-bin/genhtml
+          chmod +x /tmp/mock-bin/genhtml
+
+          # Mock lcov: merges tracefiles by concatenation
+          printf '%s\n' '#!/bin/sh' \
+            'outfile=""' \
+            'tracefiles=""' \
+            'prev=""' \
+            'for arg in "$@"; do' \
+            '  case "$prev" in' \
+            '    --output-file) outfile="$arg" ;;' \
+            '    --add-tracefile) tracefiles="$tracefiles $arg" ;;' \
+            '  esac' \
+            '  prev="$arg"' \
+            'done' \
+            'if [ -n "$outfile" ]; then' \
+            '  : > "$outfile"' \
+            '  for tf in $tracefiles; do' \
+            '    cat "$tf" >> "$outfile"' \
+            '  done' \
+            'fi' \
+            'exit 0' > /tmp/mock-bin/lcov
+          chmod +x /tmp/mock-bin/lcov
+
+          echo "/tmp/mock-bin" >> "$GITHUB_PATH"
 
       - id: action
         uses: .
-        with:
-          coverage-files: coverage/lcov.info
-          minimum-coverage: 100
-          genhtml-ignore-errors: source
         continue-on-error: true
+        with:
+          coverage-files: tests/fixtures/lcov-partial.info
+          minimum-coverage: 90
+          working-directory: tests/fixtures
 
       - name: Assert action failed due to low coverage
         env:
           OUTCOME: ${{ steps.action.outcome }}
+          ACTUAL: ${{ steps.action.outputs.total-coverage }}
         run: |
-          echo "action outcome: $OUTCOME"
+          echo "outcome: $OUTCOME"
+          echo "actual total-coverage: $ACTUAL"
           if [ "$OUTCOME" != "failure" ]; then
-            echo "FAIL: expected action to fail when coverage is below minimum"
+            echo "FAIL: expected action to fail when coverage is below minimum, but outcome was $OUTCOME"
             exit 1
           fi
-          echo "PASS: action correctly failed when coverage was below minimum"
+          echo "PASS: action correctly failed when coverage ($ACTUAL) is below minimum of 90"

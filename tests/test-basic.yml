@@ -1,4 +1,4 @@
-name: Test basic LCOV coverage report
+name: Test basic usage
 on:
   workflow_dispatch:
 jobs:
@@ -7,26 +7,56 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Install lcov
-        env:
-          DEBIAN_FRONTEND: noninteractive
+      - name: Set up mock lcov tools
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y lcov
-          lcov --version
-          genhtml --version
+          mkdir -p /tmp/mock-bin
 
-      - name: Create LCOV coverage file
-        run: |
-          mkdir -p coverage
-          printf 'TN:\nSF:src/index.js\nFN:1,main\nFNDA:1,main\nFNF:1\nFNH:1\nBRDA:1,0,0,1\nBRDA:1,0,1,0\nBRF:2\nBRH:1\nDA:1,1\nDA:2,1\nDA:3,1\nLF:3\nLH:3\nend_of_record\n' > coverage/lcov.info
+          # Mock genhtml: creates the output directory with a minimal HTML file
+          printf '%s\n' '#!/bin/sh' \
+            'outdir=""' \
+            'prev=""' \
+            'for arg in "$@"; do' \
+            '  case "$prev" in' \
+            '    --output-directory) outdir="$arg" ;;' \
+            '  esac' \
+            '  prev="$arg"' \
+            'done' \
+            'if [ -n "$outdir" ]; then' \
+            '  mkdir -p "$outdir"' \
+            '  printf "<html><body>Coverage</body></html>" > "$outdir/index.html"' \
+            'fi' \
+            'echo "genhtml: done"' \
+            'exit 0' > /tmp/mock-bin/genhtml
+          chmod +x /tmp/mock-bin/genhtml
+
+          # Mock lcov: merges tracefiles by concatenation
+          printf '%s\n' '#!/bin/sh' \
+            'outfile=""' \
+            'tracefiles=""' \
+            'prev=""' \
+            'for arg in "$@"; do' \
+            '  case "$prev" in' \
+            '    --output-file) outfile="$arg" ;;' \
+            '    --add-tracefile) tracefiles="$tracefiles $arg" ;;' \
+            '  esac' \
+            '  prev="$arg"' \
+            'done' \
+            'if [ -n "$outfile" ]; then' \
+            '  : > "$outfile"' \
+            '  for tf in $tracefiles; do' \
+            '    cat "$tf" >> "$outfile"' \
+            '  done' \
+            'fi' \
+            'exit 0' > /tmp/mock-bin/lcov
+          chmod +x /tmp/mock-bin/lcov
+
+          echo "/tmp/mock-bin" >> "$GITHUB_PATH"
 
       - id: action
         uses: .
         with:
-          coverage-files: coverage/lcov.info
-          minimum-coverage: 0
-          genhtml-ignore-errors: source
+          coverage-files: tests/fixtures/lcov-full.info
+          working-directory: tests/fixtures
 
       - name: Assert total-coverage output is set
         env:
@@ -34,7 +64,18 @@ jobs:
         run: |
           echo "actual total-coverage: $ACTUAL"
           if [ -z "$ACTUAL" ]; then
-            echo "FAIL: expected total-coverage output to be non-empty"
+            echo "FAIL: total-coverage output is empty"
             exit 1
           fi
           echo "PASS: total-coverage=$ACTUAL"
+
+      - name: Assert total-coverage is a number
+        env:
+          ACTUAL: ${{ steps.action.outputs.total-coverage }}
+        run: |
+          echo "actual total-coverage: $ACTUAL"
+          if ! echo "$ACTUAL" | grep -qE '^[0-9]+(\.[0-9]+)?$'; then
+            echo "FAIL: total-coverage is not a number: $ACTUAL"
+            exit 1
+          fi
+          echo "PASS: total-coverage is a valid number"

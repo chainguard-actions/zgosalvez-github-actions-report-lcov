@@ -1,4 +1,4 @@
-name: Test multiple coverage files
+name: Test github-token input
 on:
   workflow_dispatch:
 jobs:
@@ -55,12 +55,11 @@ jobs:
       - id: action
         uses: .
         with:
-          coverage-files: |
-            tests/fixtures/lcov-full.info
-            tests/fixtures/lcov-partial.info
+          coverage-files: tests/fixtures/lcov-full.info
           working-directory: tests/fixtures
+          github-token: ${{ github.token }}
 
-      - name: Assert total-coverage output is set for multiple files
+      - name: Assert total-coverage output is set
         env:
           ACTUAL: ${{ steps.action.outputs.total-coverage }}
         run: |
@@ -69,8 +68,15 @@ jobs:
             echo "FAIL: total-coverage output is empty"
             exit 1
           fi
+          echo "PASS: total-coverage=$ACTUAL"
+
+      - name: Assert total-coverage is a number
+        env:
+          ACTUAL: ${{ steps.action.outputs.total-coverage }}
+        run: |
+          echo "actual total-coverage: $ACTUAL"
           if ! echo "$ACTUAL" | grep -qE '^[0-9]+(\.[0-9]+)?$'; then
             echo "FAIL: total-coverage is not a number: $ACTUAL"
             exit 1
           fi
-          echo "PASS: total-coverage=$ACTUAL for multiple coverage files"
+          echo "PASS: total-coverage is a valid number"

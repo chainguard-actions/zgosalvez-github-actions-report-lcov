@@ -1,0 +1,17 @@
+TN:
+SF:src/example.js
+FN:1,exampleFunction
+FNDA:1,exampleFunction
+FN:5,anotherFunction
+FNDA:0,anotherFunction
+FNF:2
+FNH:1
+DA:1,1
+DA:2,1
+DA:5,0
+DA:6,0
+LF:4
+LH:2
+BRF:0
+BRH:0
+end_of_record

@@ -1,4 +1,4 @@
-name: Test multiple coverage files
+name: Test artifact-name input
 on:
   workflow_dispatch:
 jobs:
@@ -55,12 +55,13 @@ jobs:
       - id: action
         uses: .
         with:
-          coverage-files: |
-            tests/fixtures/lcov-full.info
-            tests/fixtures/lcov-partial.info
+          coverage-files: tests/fixtures/lcov-full.info
           working-directory: tests/fixtures
+          artifact-name: code-coverage-report
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
 
-      - name: Assert total-coverage output is set for multiple files
+      - name: Assert total-coverage output is set
         env:
           ACTUAL: ${{ steps.action.outputs.total-coverage }}
         run: |
@@ -69,8 +70,15 @@ jobs:
             echo "FAIL: total-coverage output is empty"
             exit 1
           fi
-          if ! echo "$ACTUAL" | grep -qE '^[0-9]+(\.[0-9]+)?$'; then
-            echo "FAIL: total-coverage is not a number: $ACTUAL"
+          echo "PASS: total-coverage=$ACTUAL"
+
+      - name: Assert artifact-id output is set
+        env:
+          ACTUAL: ${{ steps.action.outputs.artifact-id }}
+        run: |
+          echo "actual artifact-id: $ACTUAL"
+          if [ -z "$ACTUAL" ]; then
+            echo "FAIL: artifact-id output is empty when artifact-name was provided"
             exit 1
           fi
-          echo "PASS: total-coverage=$ACTUAL for multiple coverage files"
+          echo "PASS: artifact-id=$ACTUAL"

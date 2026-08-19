@@ -1,4 +1,4 @@
-name: Test multiple coverage files
+name: Test minimum coverage pass
 on:
   workflow_dispatch:
 jobs:
@@ -55,12 +55,11 @@ jobs:
       - id: action
         uses: .
         with:
-          coverage-files: |
-            tests/fixtures/lcov-full.info
-            tests/fixtures/lcov-partial.info
+          coverage-files: tests/fixtures/lcov-full.info
+          minimum-coverage: 90
           working-directory: tests/fixtures
 
-      - name: Assert total-coverage output is set for multiple files
+      - name: Assert action succeeded and total-coverage meets minimum
         env:
           ACTUAL: ${{ steps.action.outputs.total-coverage }}
         run: |
@@ -69,8 +68,10 @@ jobs:
             echo "FAIL: total-coverage output is empty"
             exit 1
           fi
-          if ! echo "$ACTUAL" | grep -qE '^[0-9]+(\.[0-9]+)?$'; then
-            echo "FAIL: total-coverage is not a number: $ACTUAL"
+          # Coverage should be >= 90 (full coverage file has 100%)
+          COV_INT=$(echo "$ACTUAL" | cut -d'.' -f1)
+          if [ "$COV_INT" -lt 90 ]; then
+            echo "FAIL: expected coverage >= 90, got $ACTUAL"
             exit 1
           fi
-          echo "PASS: total-coverage=$ACTUAL for multiple coverage files"
+          echo "PASS: total-coverage=$ACTUAL meets minimum of 90"
