@@ -1,0 +1,42 @@
+name: Test optional inputs - title-prefix and additional-message
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install lcov
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y lcov
+
+      - name: Create source file referenced in LCOV
+        run: |
+          mkdir -p src
+          printf 'function example() { return 1; }\n' > src/example.js
+
+      - id: action
+        uses: .
+        with:
+          coverage-files: tests/fixtures/lcov-100.info
+          title-prefix: "MyProject"
+          additional-message: "See the full report for details."
+          thresholds: "80,60"
+          # No github-token: skips PR comment (not a PR event anyway)
+
+      - name: Assert total-coverage output is set
+        env:
+          TOTAL: ${{ steps.action.outputs.total-coverage }}
+        run: |
+          echo "total-coverage: $TOTAL"
+          if [ -z "$TOTAL" ]; then
+            echo "FAIL: total-coverage output is empty"
+            exit 1
+          fi
+          if ! echo "$TOTAL" | grep -qE '^[0-9]+(\.[0-9]+)?$'; then
+            echo "FAIL: total-coverage is not numeric: $TOTAL"
+            exit 1
+          fi
+          echo "PASS: action completed with optional inputs, total-coverage=$TOTAL"
