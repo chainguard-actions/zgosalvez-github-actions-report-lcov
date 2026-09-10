@@ -1,4 +1,4 @@
-name: Test working-directory input
+name: Test working-directory input - specify source file location
 on:
   workflow_dispatch:
 jobs:
@@ -12,13 +12,33 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y lcov
 
+      - name: Create source files in a custom working directory
+        run: |
+          mkdir -p myproject/src
+          printf 'function example() { return 1; }\n' > myproject/src/example.js
+
+      - name: Create LCOV file referencing source relative to working-directory
+        run: |
+          cat > /tmp/lcov-workdir.info << 'EOF'
+          TN:
+          SF:src/example.js
+          FN:1,example
+          FNDA:1,example
+          FNF:1
+          FNH:1
+          DA:1,1
+          DA:2,1
+          DA:3,1
+          LF:3
+          LH:3
+          end_of_record
+          EOF
+
       - id: action
         uses: .
         with:
-          coverage-files: tests/fixtures/lcov-subdir.info
-          working-directory: tests/fixtures/src
-          # No github-token: skips PR comment
-          # No minimum-coverage: defaults to 0 (always passes)
+          coverage-files: /tmp/lcov-workdir.info
+          working-directory: myproject
 
       - name: Assert total-coverage output is set
         env:

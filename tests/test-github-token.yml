@@ -1,4 +1,4 @@
-name: Test github-token input
+name: Test github-token input - pass token for PR comment capability
 on:
   workflow_dispatch:
 jobs:
@@ -22,7 +22,7 @@ jobs:
         with:
           coverage-files: tests/fixtures/lcov-100.info
           github-token: ${{ github.token }}
-          # Not a PR event, so no comment will be posted, but token is exercised
+          # Not a PR event, so no comment will be posted, but token is accepted
 
       - name: Assert total-coverage output is set
         env:

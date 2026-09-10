@@ -1,4 +1,4 @@
-name: Test artifact-name input
+name: Test artifact-name input - upload HTML report artifact
 on:
   workflow_dispatch:
 jobs:
@@ -23,9 +23,8 @@ jobs:
         with:
           coverage-files: tests/fixtures/lcov-100.info
           artifact-name: code-coverage-report
-          # No github-token: skips PR comment
 
-      - name: Assert action ran (coverage computed, or failed gracefully on artifact upload)
+      - name: Assert action ran and total-coverage is set or failed gracefully
         env:
           TOTAL: ${{ steps.action.outputs.total-coverage }}
           OUTCOME: ${{ steps.action.outcome }}
@@ -43,7 +42,7 @@ jobs:
             fi
             echo "PASS: action succeeded with artifact-name, total-coverage=$TOTAL"
           elif [ "$OUTCOME" = "failure" ]; then
-            echo "PASS: action failed gracefully (artifact upload may fail in harness environment)"
+            echo "PASS: action failed gracefully (artifact upload may fail on sentinel repo)"
           else
             echo "FAIL: unexpected outcome '$OUTCOME'"
             exit 1
