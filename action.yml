@@ -36,7 +36,6 @@ outputs:
       description: 'The GitHub artifact id for the generated HTML report.'
 
 runs:
-  pre: chainguard-phonehome.js
   using: 'node24'
   main: 'dist/main/index.js'
   post: 'dist/post/index.js'
