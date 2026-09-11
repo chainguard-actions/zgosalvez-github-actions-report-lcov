@@ -18,7 +18,7 @@ jobs:
           coverage-files: tests/fixtures/lcov-full.info
           minimum-coverage: 0
           working-directory: tests/fixtures
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ github.token }}
 
       - name: Assert total-coverage output is set
         env:

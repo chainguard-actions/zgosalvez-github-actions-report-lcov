@@ -18,7 +18,7 @@ jobs:
           coverage-files: tests/fixtures/lcov-full.info
           minimum-coverage: 0
           working-directory: tests/fixtures
-          additional-message: "Custom coverage note for this build"
+          additional-message: "Custom coverage note for this build."
 
       - name: Assert total-coverage output is set
         env:
