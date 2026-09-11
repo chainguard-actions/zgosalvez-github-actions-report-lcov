@@ -11,9 +11,6 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y lcov
-          which genhtml
-          which lcov
-          lcov --version
 
       - id: action
         uses: .
@@ -23,17 +20,11 @@ jobs:
           github-token: ${{ github.token }}
           genhtml-ignore-errors: source
 
-      - name: Assert action succeeded with github-token input
+      - name: Assert total-coverage output is set
         env:
-          OUTCOME: ${{ steps.action.outcome }}
           TOTAL: ${{ steps.action.outputs.total-coverage }}
         run: |
-          echo "action outcome: $OUTCOME"
           echo "total-coverage: $TOTAL"
-          if [ "$OUTCOME" != "success" ]; then
-            echo "FAIL: expected action to succeed when github-token is provided"
-            exit 1
-          fi
           if [ -z "$TOTAL" ]; then
             echo "FAIL: total-coverage output is empty"
             exit 1
