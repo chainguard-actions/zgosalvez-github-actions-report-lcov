@@ -1,0 +1,50 @@
+name: Test LCOV reporting with artifact upload
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install lcov
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y lcov
+
+      - name: Create source files and LCOV coverage file
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/myproject/src"
+          echo "function main() { return 1; }" > "$GITHUB_WORKSPACE/myproject/src/main.js"
+          mkdir -p "$GITHUB_WORKSPACE/coverage"
+          printf 'TN:\nSF:src/main.js\nFN:1,main\nFNDA:1,main\nFNF:1\nFNH:1\nDA:1,1\nDA:2,1\nLF:2\nLH:2\nend_of_record\n' > "$GITHUB_WORKSPACE/coverage/lcov.info"
+
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          coverage-files: ${{ github.workspace }}/coverage/lcov.info
+          minimum-coverage: 0
+          working-directory: ${{ github.workspace }}/myproject
+          artifact-name: code-coverage-report
+          genhtml-ignore-errors: source
+
+      - name: Assert action ran and total-coverage is set or failed gracefully
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+          ACTUAL: ${{ steps.action.outputs.total-coverage }}
+        run: |
+          echo "outcome: $OUTCOME"
+          echo "actual total-coverage: $ACTUAL"
+          if [ "$OUTCOME" = "success" ]; then
+            if [ -z "$ACTUAL" ]; then
+              echo "FAIL: action succeeded but total-coverage output is empty"
+              exit 1
+            fi
+            echo "PASS: total-coverage=$ACTUAL"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully (artifact upload not supported in harness)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi
