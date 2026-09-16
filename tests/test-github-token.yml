@@ -12,38 +12,39 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq lcov
 
-      - name: Set up source files and coverage data
+      - name: Create source directory and LCOV coverage file
         run: |
-          mkdir -p src coverage
-          printf 'function hello() { return 42; }\n' > src/hello.js
-          cp tests/fixtures/lcov-full.info coverage/lcov.info
+          mkdir -p "$GITHUB_WORKSPACE/src"
+          printf 'function hello() { return "hello"; }\n' > "$GITHUB_WORKSPACE/src/index.js"
+          mkdir -p "$GITHUB_WORKSPACE/coverage"
+          cp tests/fixtures/lcov-full.info "$GITHUB_WORKSPACE/coverage/lcov.info"
 
       - id: action
         uses: .
         with:
           coverage-files: coverage/lcov.info
+          github-token: ${{ github.token }}
           working-directory: ${{ github.workspace }}
           genhtml-ignore-errors: source
-          github-token: ${{ github.token }}
 
       - name: Assert total-coverage output is set
         env:
-          ACTUAL: ${{ steps.action.outputs.total-coverage }}
+          TOTAL_COVERAGE: ${{ steps.action.outputs.total-coverage }}
         run: |
-          echo "actual total-coverage: $ACTUAL"
-          if [ -z "$ACTUAL" ]; then
-            echo "FAIL: total-coverage output is empty"
+          echo "total-coverage: $TOTAL_COVERAGE"
+          if [ -z "$TOTAL_COVERAGE" ]; then
+            echo "FAIL: expected total-coverage to be non-empty"
             exit 1
           fi
-          echo "PASS: total-coverage=$ACTUAL"
+          echo "PASS: total-coverage=$TOTAL_COVERAGE"
 
       - name: Assert total-coverage is numeric
         env:
-          ACTUAL: ${{ steps.action.outputs.total-coverage }}
+          TOTAL_COVERAGE: ${{ steps.action.outputs.total-coverage }}
         run: |
-          echo "actual: $ACTUAL"
-          if ! echo "$ACTUAL" | grep -qE '^[0-9]+(\.[0-9]+)?$'; then
-            echo "FAIL: total-coverage is not a numeric value: $ACTUAL"
+          echo "total-coverage: $TOTAL_COVERAGE"
+          if ! echo "$TOTAL_COVERAGE" | grep -qE '^[0-9]+(\.[0-9]+)?$'; then
+            echo "FAIL: total-coverage is not a numeric value: $TOTAL_COVERAGE"
             exit 1
           fi
           echo "PASS: total-coverage is numeric"
