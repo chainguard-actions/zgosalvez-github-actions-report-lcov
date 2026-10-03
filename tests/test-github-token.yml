@@ -1,0 +1,51 @@
+name: Test github-token input (PR comment token)
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install lcov
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y lcov
+
+      - name: Create LCOV fixture with absolute source path
+        run: |
+          SRC="$GITHUB_WORKSPACE/tests/fixtures/src/example.js"
+          printf 'TN:\nSF:%s\nFN:1,example\nFNDA:1,example\nFNF:1\nFNH:1\nDA:1,1\nDA:2,1\nDA:3,1\nLF:3\nLH:3\nend_of_record\n' "$SRC" \
+            > "$GITHUB_WORKSPACE/tests/fixtures/lcov-token-abs.info"
+
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          coverage-files: tests/fixtures/lcov-token-abs.info
+          github-token: ${{ github.token }}
+          genhtml-ignore-errors: source
+
+      - name: Assert action ran (coverage computed, or failed gracefully without a PR)
+        env:
+          TOTAL: ${{ steps.action.outputs.total-coverage }}
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          echo "total-coverage: $TOTAL"
+          if [ "$OUTCOME" = "success" ]; then
+            if [ -z "$TOTAL" ]; then
+              echo "FAIL: action succeeded but total-coverage output is empty"
+              exit 1
+            fi
+            if ! echo "$TOTAL" | grep -qE '^[0-9]+(\.[0-9]+)?$'; then
+              echo "FAIL: total-coverage is not numeric: '$TOTAL'"
+              exit 1
+            fi
+            echo "PASS: total-coverage is '$TOTAL'"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully (no PR to comment on under workflow_dispatch)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi

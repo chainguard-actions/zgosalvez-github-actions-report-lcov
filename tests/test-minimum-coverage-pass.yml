@@ -1,0 +1,42 @@
+name: Test minimum coverage threshold passes
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install lcov
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y lcov
+
+      - name: Create full LCOV fixture with absolute source path
+        run: |
+          SRC="$GITHUB_WORKSPACE/tests/fixtures/src/example.js"
+          printf 'TN:\nSF:%s\nFN:1,example\nFNDA:1,example\nFNF:1\nFNH:1\nDA:1,1\nDA:2,1\nDA:3,1\nLF:3\nLH:3\nend_of_record\n' "$SRC" \
+            > "$GITHUB_WORKSPACE/tests/fixtures/lcov-full-abs.info"
+
+      - id: action
+        uses: .
+        with:
+          coverage-files: tests/fixtures/lcov-full-abs.info
+          minimum-coverage: 90
+          genhtml-ignore-errors: source
+
+      - name: Assert action passed and total-coverage is at least 90
+        env:
+          TOTAL: ${{ steps.action.outputs.total-coverage }}
+        run: |
+          echo "total-coverage: $TOTAL"
+          if [ -z "$TOTAL" ]; then
+            echo "FAIL: total-coverage output is empty"
+            exit 1
+          fi
+          # Coverage should be >= 90 (full coverage fixture has 100%)
+          if ! awk "BEGIN { exit ($TOTAL >= 90) ? 0 : 1 }"; then
+            echo "FAIL: expected total-coverage >= 90, got '$TOTAL'"
+            exit 1
+          fi
+          echo "PASS: total-coverage '$TOTAL' meets minimum of 90"

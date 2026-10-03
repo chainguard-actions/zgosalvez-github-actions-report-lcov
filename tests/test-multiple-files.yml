@@ -1,0 +1,44 @@
+name: Test multiple LCOV files via glob pattern
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install lcov
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y lcov
+
+      - name: Create LCOV fixtures with absolute source paths
+        run: |
+          SRC="$GITHUB_WORKSPACE/tests/fixtures/src/example.js"
+          printf 'TN:\nSF:%s\nFN:1,example\nFNDA:1,example\nFNF:1\nFNH:1\nDA:1,1\nDA:2,1\nDA:3,1\nLF:3\nLH:3\nend_of_record\n' "$SRC" \
+            > "$GITHUB_WORKSPACE/tests/fixtures/lcov-multi-a.info"
+          printf 'TN:\nSF:%s\nFN:1,example\nFNDA:1,example\nFNF:1\nFNH:1\nDA:1,1\nDA:2,0\nDA:3,0\nDA:4,1\nLF:4\nLH:2\nend_of_record\n' "$SRC" \
+            > "$GITHUB_WORKSPACE/tests/fixtures/lcov-multi-b.info"
+
+      # Use a glob pattern to pick up both fixture LCOV files
+      - id: action
+        uses: .
+        with:
+          coverage-files: tests/fixtures/lcov-multi-*.info
+          minimum-coverage: 0
+          genhtml-ignore-errors: source
+
+      - name: Assert total-coverage output is set and numeric
+        env:
+          TOTAL: ${{ steps.action.outputs.total-coverage }}
+        run: |
+          echo "total-coverage: $TOTAL"
+          if [ -z "$TOTAL" ]; then
+            echo "FAIL: total-coverage output is empty"
+            exit 1
+          fi
+          if ! echo "$TOTAL" | grep -qE '^[0-9]+(\.[0-9]+)?$'; then
+            echo "FAIL: total-coverage is not a numeric value: '$TOTAL'"
+            exit 1
+          fi
+          echo "PASS: total-coverage from multiple files is '$TOTAL'"

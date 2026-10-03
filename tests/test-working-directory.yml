@@ -1,0 +1,45 @@
+name: Test working-directory input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install lcov
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y lcov
+
+      - name: Create source file and LCOV fixture using working-directory
+        run: |
+          # Create a dedicated source directory to use as working-directory
+          mkdir -p "$GITHUB_WORKSPACE/tests/fixtures/src-workdir"
+          echo "function hello() { return 42; }" > "$GITHUB_WORKSPACE/tests/fixtures/src-workdir/hello.js"
+
+          # LCOV file references the source file relative to the working-directory
+          printf 'TN:\nSF:hello.js\nFN:1,hello\nFNDA:1,hello\nFNF:1\nFNH:1\nDA:1,1\nLF:1\nLH:1\nend_of_record\n' \
+            > "$GITHUB_WORKSPACE/tests/fixtures/lcov-workdir.info"
+
+      - id: action
+        uses: .
+        with:
+          coverage-files: tests/fixtures/lcov-workdir.info
+          working-directory: ${{ github.workspace }}/tests/fixtures/src-workdir
+          genhtml-ignore-errors: source
+
+      - name: Assert total-coverage output is set and numeric
+        env:
+          TOTAL: ${{ steps.action.outputs.total-coverage }}
+        run: |
+          echo "total-coverage: $TOTAL"
+          if [ -z "$TOTAL" ]; then
+            echo "FAIL: total-coverage output is empty"
+            exit 1
+          fi
+          if ! echo "$TOTAL" | grep -qE '^[0-9]+(\.[0-9]+)?$'; then
+            echo "FAIL: total-coverage is not a numeric value: '$TOTAL'"
+            exit 1
+          fi
+          echo "PASS: total-coverage is '$TOTAL'"

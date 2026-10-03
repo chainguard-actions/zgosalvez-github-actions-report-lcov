@@ -1,0 +1,47 @@
+name: Test basic LCOV coverage reporting
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install lcov
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y lcov
+
+      - name: Create LCOV fixture with absolute source path
+        run: |
+          SRC="$GITHUB_WORKSPACE/tests/fixtures/src/example.js"
+          printf 'TN:\nSF:%s\nFN:1,example\nFNDA:1,example\nFNF:1\nFNH:1\nDA:1,1\nDA:2,1\nDA:3,1\nLF:3\nLH:3\nend_of_record\n' "$SRC" \
+            > "$GITHUB_WORKSPACE/tests/fixtures/lcov-abs.info"
+
+      - id: action
+        uses: .
+        with:
+          coverage-files: tests/fixtures/lcov-abs.info
+          genhtml-ignore-errors: source
+
+      - name: Assert total-coverage output is set
+        env:
+          TOTAL: ${{ steps.action.outputs.total-coverage }}
+        run: |
+          echo "total-coverage: $TOTAL"
+          if [ -z "$TOTAL" ]; then
+            echo "FAIL: total-coverage output is empty"
+            exit 1
+          fi
+          echo "PASS: total-coverage is '$TOTAL'"
+
+      - name: Assert total-coverage is a number
+        env:
+          TOTAL: ${{ steps.action.outputs.total-coverage }}
+        run: |
+          echo "total-coverage: $TOTAL"
+          if ! echo "$TOTAL" | grep -qE '^[0-9]+(\.[0-9]+)?$'; then
+            echo "FAIL: total-coverage is not a numeric value: '$TOTAL'"
+            exit 1
+          fi
+          echo "PASS: total-coverage is numeric"
