@@ -19,6 +19,7 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 | v7.2.0 | [`v7.2.0`](https://github.com/chainguard-actions/zgosalvez-github-actions-report-lcov/tree/v7.2.0) | [`00810fe`](https://github.com/zgosalvez/github-actions-report-lcov/commit/00810fe31a127d403ad812ab09e1250e97638b8c) | [`HARDENING.md`](https://github.com/chainguard-actions/zgosalvez-github-actions-report-lcov/blob/v7.2.0/HARDENING.md) |
 | v7.2.1 | [`v7.2.1`](https://github.com/chainguard-actions/zgosalvez-github-actions-report-lcov/tree/v7.2.1) | [`72cb85c`](https://github.com/zgosalvez/github-actions-report-lcov/commit/72cb85c549acad28913c9607dbd04af41bec7980) | [`HARDENING.md`](https://github.com/chainguard-actions/zgosalvez-github-actions-report-lcov/blob/v7.2.1/HARDENING.md) |
 | v7.2.2 | [`v7.2.2`](https://github.com/chainguard-actions/zgosalvez-github-actions-report-lcov/tree/v7.2.2) | [`1f89095`](https://github.com/zgosalvez/github-actions-report-lcov/commit/1f890959536bc7cc4f8ac36e78626797c41f6ac1) | [`HARDENING.md`](https://github.com/chainguard-actions/zgosalvez-github-actions-report-lcov/blob/v7.2.2/HARDENING.md) |
+| v7.2.3 | [`v7.2.3`](https://github.com/chainguard-actions/zgosalvez-github-actions-report-lcov/tree/v7.2.3) | [`7e6043a`](https://github.com/zgosalvez/github-actions-report-lcov/commit/7e6043a0e3ae37bc6e45291401ddea852fc750e5) | [`HARDENING.md`](https://github.com/chainguard-actions/zgosalvez-github-actions-report-lcov/blob/v7.2.3/HARDENING.md) |
 
 ## Privacy
 
