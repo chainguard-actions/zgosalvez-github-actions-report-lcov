@@ -1,0 +1,36 @@
+name: Test github-token on non-PR event skips comment
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Ensure lcov/genhtml are installed
+        run: |
+          if ! command -v genhtml >/dev/null 2>&1 || ! command -v lcov >/dev/null 2>&1; then
+            SUDO=""
+            if [ "$(id -u)" != "0" ]; then SUDO="sudo"; fi
+            $SUDO apt-get update
+            $SUDO apt-get install -y lcov
+          fi
+          lcov --version
+      - name: Verify fixture is present
+        run: test -f "$GITHUB_WORKSPACE/tests/fixtures/tracefiles/math/lcov.info"
+      - id: action
+        uses: .
+        with:
+          coverage-files: ${{ github.workspace }}/tests/fixtures/tracefiles/math/lcov.info
+          working-directory: tests/fixtures/src
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          update-comment: "true"
+      - name: Assert coverage output
+        env:
+          ACTUAL: ${{ steps.action.outputs.total-coverage }}
+        run: |
+          echo "actual: $ACTUAL"
+          if ! awk -v v="$ACTUAL" 'BEGIN { d = v - 75; if (d < 0) d = -d; exit !(d < 0.01) }'; then
+            echo "FAIL: expected 75"
+            exit 1
+          fi
+          echo "PASS"
